@@ -41,7 +41,7 @@ public interface BackendService {
     Paciente getPaciente(final Integer numeroPaciente);
 
     /**
-     * Get all Controles of a Veterinario order by Date.
+     * Get all Controles of a Veterinario.
      *
      * @param rutVeterinario who realized the Control.
      * @return the {@link List} of {@link Control}.
