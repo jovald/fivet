@@ -9,6 +9,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.junit.*;
 import org.junit.rules.Timeout;
 import org.junit.runners.MethodSorters;
+import sun.rmi.runtime.Log;
 
 import java.util.Date;
 import java.util.List;
@@ -47,7 +48,7 @@ public class TestEbeanBackendService {
     @Before
     public void beforeTest() {
         stopWatch = Stopwatch.createStarted();
-        log.debug("Initializing Test Suite with database: {}", DB);
+        log.info("Initializing Test Suite with database: {}", DB);
 
         backendService = new EbeanBackendService(DB);
         backendService.initialize();
@@ -58,17 +59,19 @@ public class TestEbeanBackendService {
      */
     @After
     public void afterTest() {
-        log.debug("Test Suite done. Shutting down the database ..");
+        log.info("Test Suite done. Shutting down the database ..");
         backendService.shutdown();
 
-        log.debug("Test finished in {}", stopWatch.toString());
+        log.info("Test finished in {}", stopWatch.toString());
     }
 
     /**
-     * Test de la persona
+     * EbeanBackendService.getPersona(string rut) Testing.
      */
     @Test
-    public void testPersona() {
+    public void getPersonaTest() {
+
+        log.info("Testing EbeanBackendService.getPersona() ..");
 
         final String rut = "1-1";
         final String nombre = "Este es mi nombre";
@@ -86,14 +89,14 @@ public class TestEbeanBackendService {
 
             persona.insert();
 
-            log.debug("Persona to insert: {}", persona);
+            log.info("Persona to insert: {}", persona);
             Assert.assertNotNull("Objeto sin id", persona.getId());
         }
 
         // Get from backend v1
         {
             final Persona persona = backendService.getPersona(rut);
-            log.debug("Persona founded: {}", persona);
+            log.info("Persona founded: {}", persona);
             Assert.assertNotNull("Can't find Persona", persona);
             Assert.assertNotNull("Objeto sin id", persona.getId());
             Assert.assertEquals("Nombre distintos!", nombre, persona.getNombre());
@@ -108,7 +111,7 @@ public class TestEbeanBackendService {
         // Get from backend v2
         {
             final Persona persona = backendService.getPersona(rut);
-            log.debug("Persona found: {}", persona);
+            log.info("Persona found: {}", persona);
             Assert.assertNotNull("Can't find Persona", persona);
             Assert.assertEquals("Nombres distintos!", nombre + nombre, persona.getNombre());
         }
@@ -116,20 +119,22 @@ public class TestEbeanBackendService {
         // Get from backend v3
         {
             final Persona persona = backendService.getPersona(mail);
-            log.debug("Persona encontrada: {}", persona);
+            log.info("Persona encontrada: {}", persona);
             Assert.assertNotNull("No se encontro a la persona", persona);
             Assert.assertEquals("Nombre diferente", nombre + nombre, persona.getNombre());
-            log.debug("Pruebas de obtencion de persona lista");
+            log.info("Pruebas de obtencion de persona lista");
         }
 
         // Get from backend v4
         {
             // se busca una persona que no exista en el sistema
             final Persona persona = backendService.getPersona("11-9");
-            log.debug("Buscando una persona inexistente");
+            log.info("Buscando una persona inexistente");
             Assert.assertEquals("Se encontro una persona", null, persona);
 
         }
+
+        log.info("Test EbeanBackendService.getPersona() OK");
 
     }
 
@@ -138,9 +143,9 @@ public class TestEbeanBackendService {
      * EbeanBackendService.getPacientes() Testing.
      */
     @Test
-    public void testPersonaPaciente() {
+    public void getPacientesTest() {
 
-        log.debug("Testing EbeanBackendService.getPacientes() ..");
+        log.info("Testing EbeanBackendService.getPacientes() ..");
 
         final Persona persona = Persona.builder()
                 .nombre("Juanito")
@@ -151,8 +156,8 @@ public class TestEbeanBackendService {
 
         persona.insert();
 
-        log.debug("Persona inserted: {}", persona);
-        Assert.assertNotNull("Objeto sin id", persona.getId());
+        log.info("Persona inserted: {}", persona);
+        Assert.assertNotNull("Without ID", persona.getId());
 
         // Create a new Paciente
         String patientName1 = "laika";
@@ -186,7 +191,7 @@ public class TestEbeanBackendService {
         persona.add(patient2);
         persona.add(patient3);
         persona.update();
-        log.debug("Pacientes added");
+        log.info("Pacientes added");
 
         List<Paciente> patients = backendService.getPacientes();
         Assert.assertNotNull("List not null", patients);
@@ -197,5 +202,262 @@ public class TestEbeanBackendService {
             Assert.assertNotNull("Paciente without Numero", patient.getNumero());
         }
 
-        log.debug("Test EbeanBackendService.getPacientes() OK");
+        log.info("Test EbeanBackendService.getPacientes() OK");
     }
+
+    /**
+     * EbeanBackendService.getPaciente(Integer numeroPaciente) Testing.
+     */
+    @Test
+    public void getPacienteTest(){
+        log.info("Testing EbeanBackendService.getPaciente(Integer numeroPaciente) ..");
+
+        // Non-Existence Test
+        Assert.assertNull(backendService.getPaciente(5124723));
+
+        final Integer patientNumber = 5124723;
+        final String patientName = "laika";
+        final String patientColor = "negrusho";
+        final String patientSpecies= "NN";
+        final String patientRace = "NN";
+        final Paciente.Sexo patientGender = Paciente.Sexo.MACHO;
+
+        final Paciente patient = Paciente.builder()
+                .numero(patientNumber)
+                .nombre(patientName)
+                .color(patientColor)
+                .especie(patientSpecies)
+                .raza(patientRace)
+                .sexo(patientGender)
+                .build();
+        patient.insert();
+        log.info("Paciente inserted: {}", patient);
+
+        Paciente patientBack = backendService.getPaciente(patientNumber);
+
+        // Existence Test
+        Assert.assertNotNull("Paciente null", patientBack);
+
+        // Atribute data Test
+        Assert.assertEquals("Different Nombre", patientName, patientBack.getNombre());
+        Assert.assertEquals("Different Numero", patientNumber,patientBack.getNumero());
+        Assert.assertEquals("Different Color", patientColor,patientBack.getColor());
+        Assert.assertEquals("Different Especie", patientSpecies,patientBack.getEspecie());
+        Assert.assertEquals("Different Raza", patientRace,patientBack.getRaza());
+        Assert.assertEquals("Different Sexo", patientGender,patientBack.getSexo());
+
+        log.info("Test EbeanBackendService.getPaciente(Integer numeroPaciente) OK");
+    }
+
+    /**
+     * EbeanBackendService.getControlesVeterinario(string rutVeterinario) Testing
+     */
+    @Test
+    public void getControlesVeterinarioTest(){
+        log.info("Testing EbeanBackendService.getControlesVeterinario(string rutVeterinario) Testing ..");
+
+        // Persona Creation (Veterinario)
+        final String vetRut = "2-7";
+        final Persona vet = Persona.builder()
+                .nombre("Pinocheque")
+                .rut(vetRut)
+                .password("123456")
+                .direccion("Cualquier lado")
+                .mail("dinero@mas.dinero.org")
+                .telFijo("123-llame ya")
+                .tipo(Persona.Tipo.VETERINARIO)
+                .build();
+        vet.insert();
+
+        log.info("Veterinario inserted: {}", vet);
+
+        // Person Creation (Cliente)
+        final Persona person = Persona.builder()
+                .nombre("Test")
+                .rut("2-7")
+                .password("test123")
+                .tipo(Persona.Tipo.CLIENTE)
+                .build();
+        person.insert();
+
+        log.info("Persona inserted: {}", person);
+
+        // Paciente Creation
+        final Paciente patient = Paciente.builder()
+                .numero(65432)
+                .nombre("Laika")
+                .sexo(Paciente.Sexo.INDETERMINADO)
+                .especie("Perruno")
+                .raza("NN")
+                .build();
+        patient.insert();
+
+        log.info("Paciente inserted: {}", patient);
+
+        // Non-existence Test
+        Assert.assertTrue(backendService.getControlesVeterinario(vetRut).size() == 0);
+
+        // Control Creation
+        Date date1 = new Date(2014,10,1);
+        Date date2 = new Date(2014,11,2);
+        final Control control = Control.builder()
+                .veterinario(vet)
+                .fecha(date1)
+                .proxControl(date2)
+                .diagnostico("Sano")
+                .build();
+        control.insert();
+        log.info("Control inserted: {}", control);
+
+        // Control Creation
+        Date date3 = new Date(2015,12,1);
+        final Control control2 = Control.builder()
+                .veterinario(vet)
+                .fecha(date2)
+                .proxControl(date3)
+                .diagnostico("Sano")
+                .build();
+        control2.insert();
+        log.info("Control inserted: {}", control2);
+
+        // Update Controls of Paciente
+        patient.add(control);
+        patient.add(control2);
+        patient.update();
+
+        // Add Paciente to Person (cliente)
+        person.add(patient);
+        person.update();
+
+        // Getting Controls of Person (veterinario)
+        List<Control> controlesBack =  backendService.getControlesVeterinario(vetRut);
+
+        // Existence Test
+        Assert.assertNotNull(controlesBack);
+
+        // Quantity Test
+        Assert.assertEquals("Controls Quantity", 2, controlesBack.size());
+
+        for(Control controlB : controlesBack){
+            // Atribute data test
+            Assert.assertNotNull("At least a Veterinario", controlB.getVeterinario());
+
+            // Inverse Navigation Test
+            Assert.assertEquals("Different Ruts", vetRut, controlB.getVeterinario().getRut());
+        }
+
+        log.info("Test EbeanBackendService.getControlesVeterinario(string rutVeterinario) OK");
+    }
+
+    /**
+     * EbeanBackendService.getPacientesPorNombre(String nombre) Testing
+     */
+    @Test
+    public void getPacientesPorNombreTest(){
+        log.info("Testing EbeanBackendService.getPacientesPorNombre(String nombre) ..");
+
+        final String patientName = "tobi";
+
+        // Pacientes Creation
+        Paciente patient1 = Paciente.builder()
+                .numero(123)
+                .nombre(patientName)
+                .build();
+        patient1.insert();
+        log.info("Paciente inserted: {}", patient1);
+
+        Paciente patient2 = Paciente.builder()
+                .numero(232)
+                .nombre(patientName)
+                .build();
+        patient2.insert();
+        log.info("Paciente inserted: {}", patient2);
+
+        // Getting List of Pacientes
+        List<Paciente> patients = backendService.getPacientesPorNombre(patientName);
+
+        // Exsistence Test
+        Assert.assertNotNull("Cannot be Null", patients);
+
+        // Quantity Validation
+        Assert.assertEquals("Quantity of Pacientes", 2 ,patients.size());
+
+        for(Paciente ptn : patients){
+            // Atribute Data validation
+            Assert.assertNotNull("nombre no puede ser null", ptn.getNombre());
+        }
+
+        //se busca un paciente que no exista
+        List<Paciente> pacientesnull = backendService.getPacientesPorNombre("Alfredo");
+
+        // Non-Existence test
+        Assert.assertEquals("Non-Existence", backendService.getPacientesPorNombre("Alfredo").size(), 0);
+
+        log.info("Test EbeanBackendService.getPacientesPorNombre(String nombre) OK");
+    }
+
+    /**
+     * EbeanBackendService.agregarControl(Control control, Integer numeroPaciente) Testing
+     */
+    @Test
+    public void testAgregarControl(){
+        log.info("Testing EbeanBackendService.agregarControl(Control control, Integer numeroPaciente) ..");
+
+        final Integer patientNumber = 12345;
+
+        // Paciente creation
+        Paciente patient = Paciente.builder()
+                .nombre("Laika")
+                .numero(patientNumber)
+                .build();
+        patient.insert();
+        log.info("Paciente inserted: {}", patient);
+
+        // Persona creation
+        Persona vet = Persona.builder()
+                .nombre("Luchito Jarra")
+                .rut("1-9")
+                .password("1234")
+                .tipo(Persona.Tipo.VETERINARIO)
+                .build();
+        vet.insert();
+        log.info("Veterinario inserted: {}", vet);
+
+        // Control creation
+        Date fecha = new Date(1993,10,9);
+        Control control = Control.builder()
+                .veterinario(vet)
+                .fecha(fecha)
+                .proxControl(fecha)
+                .diagnostico("nada")
+                .build();
+        control.insert();
+        log.info("Control inserted: {}", control);
+
+        // Adding Control to Paciente
+        backendService.agregarControl(control,patientNumber);
+        log.info("Control Added to Paciente");
+
+        // Getting Paciente
+        Paciente patientBack = backendService.getPaciente(patientNumber);
+
+        // Existence test
+        Assert.assertNotNull("Paciente cannot be null", patientBack);
+
+        // Atributes data validation
+        Assert.assertEquals("Different numbers", patientNumber, patientBack.getNumero());
+        Assert.assertNotNull("Controles cannot be null", patientBack.getControles());
+
+        for(Control ctrl : patientBack.getControles()){
+            Assert.assertEquals("Different Fechas", fecha, ctrl.getFecha());
+            Assert.assertEquals("Different Proximo Control", fecha, ctrl.getProxControl());
+            Assert.assertEquals("Different Veterinarios", vet, ctrl.getVeterinario());
+        }
+
+        // Non-exsistence Test
+        Assert.assertNull(backendService.getPaciente(-1));
+
+        log.info("Test EbeanBackendService.agregarControl(Control control, Integer numeroPaciente) OK");
+    }
+
+}
