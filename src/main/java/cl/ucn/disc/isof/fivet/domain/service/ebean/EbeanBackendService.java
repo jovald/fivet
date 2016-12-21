@@ -118,4 +118,29 @@ public class EbeanBackendService implements BackendService {
         ).findUnique();
     }
 
+    /**
+     * Get all Controles of a Veterinario.
+     * @param rutVeterinario who relized the Control.
+     * @return List with Veterinarios.
+     */
+    @Override
+    public List<Control> getControlesVeterinario(String rutVeterinario) {
+        return this.ebeanServer.find(Control.class).where()
+                .eq("veterinario.rut",rutVeterinario)
+                .findList();
+    }
+
+    /**
+     * Get Paciente from Nombre matching.
+     * @param nombre e.g.: "pep" can return pepe, pepa, pepilla, etc..
+     * @return List with Pacientes
+     */
+    @Override
+    public List<Paciente> getPacientesPorNombre(String nombre) {
+
+        return ebeanServer.find(Paciente.class).where()
+                .eq("nombre",nombre)
+                .findList();
+    }
+
     
