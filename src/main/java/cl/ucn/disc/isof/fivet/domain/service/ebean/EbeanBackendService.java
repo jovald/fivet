@@ -143,4 +143,37 @@ public class EbeanBackendService implements BackendService {
                 .findList();
     }
 
-    
+    /**
+     * Add a Control to Paciente identify by numeroPaciente.
+     * @param control        to add
+     * @param numeroPaciente to asociate
+     */
+    @Override
+    public void agregarControl(Control control, Integer numeroPaciente) {
+        Paciente paciente = ebeanServer.find(Paciente.class).where()
+                .eq("numero", numeroPaciente)
+                .findUnique();
+        paciente.add(control);
+        paciente.update();
+    }
+
+    /**
+     * BD Init.
+     */
+    @Override
+    public void initialize() {
+
+        log.info("Initializing Ebean ..");
+    }
+
+    /**
+     * Close BD.
+     */
+    @Override
+    public void shutdown() {
+        log.debug("Shutting down Ebean ..");
+
+        // TODO: Verificar si es necesario des-registrar el driver
+        this.ebeanServer.shutdown(true, false);
+    }
+}
