@@ -106,4 +106,16 @@ public class EbeanBackendService implements BackendService {
         return this.ebeanServer.find(Paciente.class).findList();
     }
 
+    /**
+     * Get Paciente from his unique number.
+     * @param numeroPaciente
+     * @return Paciente
+     */
+    @Override
+    public Paciente getPaciente(Integer numeroPaciente) {
+        return this.ebeanServer.find(Paciente.class).where(
+                Expr.eq("numero", numeroPaciente)
+        ).findUnique();
+    }
+
     
